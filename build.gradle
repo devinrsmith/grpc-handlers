@@ -1,0 +1,80 @@
+plugins {
+	id 'java-library'
+	id 'com.diffplug.spotless'
+	id 'com.google.protobuf'
+}
+
+repositories {
+	mavenCentral() // junit-vintage-engine doesn't seem to be in jcenter...
+}
+
+java {
+	sourceCompatibility = JavaVersion.VERSION_1_8
+	targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+def grpcVersion = '1.31.1'
+def protobufVersion = '3.13.0'
+def protocVersion = protobufVersion
+
+dependencies {
+	api "com.google.protobuf:protobuf-java:${protobufVersion}"
+	api "io.grpc:grpc-stub:${grpcVersion}"
+	api "io.grpc:grpc-protobuf:${grpcVersion}"
+	runtimeOnly "io.grpc:grpc-netty-shaded:${grpcVersion}"
+	testImplementation "io.grpc:grpc-testing:${grpcVersion}"
+
+	testImplementation 'org.junit.jupiter:junit-jupiter-api:5.6.2'
+	testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.6.2'
+	// grpc-testing is based on junit 4.
+	testRuntimeOnly 'org.junit.vintage:junit-vintage-engine:5.6.2'
+}
+
+test {
+	useJUnitPlatform()
+}
+
+protobuf {
+	protoc { artifact = "com.google.protobuf:protoc:${protocVersion}" }
+	plugins {
+		grpc { artifact = "io.grpc:protoc-gen-grpc-java:${grpcVersion}" }
+	}
+	generateProtoTasks {
+		all()*.plugins { grpc {} }
+	}
+	generateProtoTasks {
+		all().each { generateProtoTask ->
+			// The generateProto task does not seem to properly clean its previously generated outputs.
+			// See https://github.com/google/protobuf-gradle-plugin/issues/332
+			// See https://github.com/google/protobuf-gradle-plugin/issues/331
+			generateProtoTask.doFirst {
+				delete generateProtoTask.outputs
+			}
+		}
+	}
+}
+
+sourceSets {
+	main {
+		java {
+			srcDirs 'build/generated/source/proto/main/grpc'
+			srcDirs 'build/generated/source/proto/main/java'
+		}
+	}
+}
+
+tasks.withType(JavaCompile) {
+	options.compilerArgs.add('-Xlint:all')
+	//options.compilerArgs.add('-Werror')
+}
+
+spotless {
+	java {
+		target 'src/*/java/**/*.java'
+		googleJavaFormat()
+	}
+	groovyGradle {
+		greclipse()
+	}
+	enforceCheck = false
+}

@@ -1,0 +1,13 @@
+pluginManagement {
+	plugins {
+		id 'com.diffplug.spotless' version '5.2.0'
+		id 'com.google.protobuf' version '0.8.13'
+	}
+}
+
+plugins {
+	id 'com.diffplug.spotless' apply false
+	id 'com.google.protobuf' apply false
+}
+
+rootProject.name = 'grpc-handlers'
