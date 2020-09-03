@@ -2,6 +2,7 @@ plugins {
 	id 'java-library'
 	id 'com.diffplug.spotless'
 	id 'com.google.protobuf'
+	id 'application'
 }
 
 repositories {
@@ -21,13 +22,7 @@ dependencies {
 	api "com.google.protobuf:protobuf-java:${protobufVersion}"
 	api "io.grpc:grpc-stub:${grpcVersion}"
 	api "io.grpc:grpc-protobuf:${grpcVersion}"
-	runtimeOnly "io.grpc:grpc-netty-shaded:${grpcVersion}"
-	testImplementation "io.grpc:grpc-testing:${grpcVersion}"
-
-	testImplementation 'org.junit.jupiter:junit-jupiter-api:5.6.2'
-	testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.6.2'
-	// grpc-testing is based on junit 4.
-	testRuntimeOnly 'org.junit.vintage:junit-vintage-engine:5.6.2'
+	implementation "io.grpc:grpc-netty-shaded:${grpcVersion}"
 }
 
 test {
@@ -77,4 +72,28 @@ spotless {
 		greclipse()
 	}
 	enforceCheck = false
+}
+
+startScripts.enabled = false
+
+task server(type: CreateStartScripts) {
+	mainClassName = 'com.devinrsmith.ServerMain'
+	applicationName = 'server'
+	outputDir = new File(project.buildDir, name)
+	classpath = startScripts.classpath
+	defaultJvmOpts = []
+}
+
+task client(type: CreateStartScripts) {
+	mainClassName = 'com.devinrsmith.ClientMain'
+	applicationName = 'client'
+	outputDir = new File(project.buildDir, name)
+	classpath = startScripts.classpath
+	defaultJvmOpts = []
+}
+
+applicationDistribution.into('bin') {
+	from(server)
+	from(client)
+	fileMode = 0755
 }
